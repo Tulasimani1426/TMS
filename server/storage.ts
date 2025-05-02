@@ -233,7 +233,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+    // Ensure optional fields are explicitly set to null if undefined
+    const userValues = {
+      ...insertUser,
+      role: insertUser.role ?? null,
+      avatar: insertUser.avatar ?? null
+    };
+    
+    const [user] = await db.insert(users).values(userValues).returning();
     return user;
   }
 
@@ -247,7 +254,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
-    const [task] = await db.insert(tasks).values(insertTask).returning();
+    // Ensure optional fields are explicitly set to null if undefined
+    const taskValues = {
+      ...insertTask,
+      description: insertTask.description ?? null,
+      dueDate: insertTask.dueDate ?? null,
+      estimatedHours: insertTask.estimatedHours ?? null,
+      assignedToId: insertTask.assignedToId ?? null
+    };
+    
+    const [task] = await db.insert(tasks).values(taskValues).returning();
     
     // If the task is assigned to someone, create a notification
     if (task.assignedToId && task.assignedToId !== task.createdById) {
@@ -327,7 +343,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createNotification(insertNotification: InsertNotification): Promise<Notification> {
-    const [notification] = await db.insert(notifications).values(insertNotification).returning();
+    // Ensure optional fields are explicitly set to null if undefined
+    const notificationValues = {
+      ...insertNotification,
+      taskId: insertNotification.taskId ?? null,
+      read: insertNotification.read ?? false
+    };
+    
+    const [notification] = await db.insert(notifications).values(notificationValues).returning();
     return notification;
   }
 
