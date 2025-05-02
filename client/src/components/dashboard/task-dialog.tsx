@@ -27,7 +27,7 @@ interface TaskDialogProps {
 const taskFormSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   description: z.string().optional(),
-  dueDate: z.string().optional(),
+  dueDate: z.string().optional(), // Keep as string for the form
   priority: z.enum(["low", "medium", "high"]),
   status: z.enum(["to-do", "in-progress", "completed", "blocked"]),
   estimatedHours: z.preprocess(
@@ -40,7 +40,16 @@ const taskFormSchema = z.object({
   )
 });
 
-type TaskFormValues = z.infer<typeof taskFormSchema>;
+// We need to modify this type to work with the form
+interface TaskFormValues {
+  title: string;
+  description?: string;
+  dueDate: string; // Keep as string for the form
+  priority: "low" | "medium" | "high";
+  status: "to-do" | "in-progress" | "completed" | "blocked";
+  estimatedHours: number | null;
+  assignedToId: number | null;
+}
 
 export function TaskDialog({ isOpen, onClose, taskId, mode }: TaskDialogProps) {
   const { createTask, updateTask, deleteTask } = useTasks();
@@ -112,10 +121,10 @@ export function TaskDialog({ isOpen, onClose, taskId, mode }: TaskDialogProps) {
     setIsSubmitting(true);
     
     try {
-      // Convert form values to the right format
+      // Need to explicitly convert the string date to a Date object
       const taskData: Partial<InsertTask> = {
         ...values,
-        dueDate: values.dueDate ? new Date(values.dueDate) : undefined,
+        dueDate: values.dueDate ? new Date(values.dueDate) : null
       };
       
       if (mode === "create") {
