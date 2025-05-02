@@ -282,9 +282,9 @@ export function TaskDialog({ isOpen, onClose, taskId, mode }: TaskDialogProps) {
                       <FormItem className="sm:col-span-6">
                         <FormLabel>Assign to</FormLabel>
                         <Select 
-                          onValueChange={(value) => field.onChange(value === "" ? null : Number(value))} 
-                          defaultValue={field.value?.toString() || ""}
-                          value={field.value?.toString() || ""}
+                          onValueChange={(value) => field.onChange(value === "unassigned" ? null : Number(value))} 
+                          defaultValue={field.value?.toString() || "unassigned"}
+                          value={field.value?.toString() || "unassigned"}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -292,7 +292,7 @@ export function TaskDialog({ isOpen, onClose, taskId, mode }: TaskDialogProps) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">Unassigned</SelectItem>
+                            <SelectItem value="unassigned">Unassigned</SelectItem>
                             {users.map((user) => (
                               <SelectItem key={user.id} value={user.id.toString()}>
                                 {user.name}

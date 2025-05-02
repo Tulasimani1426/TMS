@@ -37,7 +37,7 @@ export function SearchFilters() {
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Any Status</SelectItem>
+            <SelectItem value="any">Any Status</SelectItem>
             <SelectItem value="to-do">To Do</SelectItem>
             <SelectItem value="in-progress">In Progress</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
@@ -51,7 +51,7 @@ export function SearchFilters() {
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Any Priority</SelectItem>
+            <SelectItem value="any">Any Priority</SelectItem>
             <SelectItem value="high">High</SelectItem>
             <SelectItem value="medium">Medium</SelectItem>
             <SelectItem value="low">Low</SelectItem>
@@ -64,7 +64,7 @@ export function SearchFilters() {
             <SelectValue placeholder="Due Date" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Any Due Date</SelectItem>
+            <SelectItem value="any">Any Due Date</SelectItem>
             <SelectItem value="today">Today</SelectItem>
             <SelectItem value="this-week">This week</SelectItem>
             <SelectItem value="next-week">Next week</SelectItem>
