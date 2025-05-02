@@ -2,7 +2,7 @@ import { users, tasks, notifications, type User, type InsertUser, type Task, typ
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { db, pool } from "./db";
-import { eq, and, lt, ne } from "drizzle-orm";
+import { eq, and, lt, ne, or } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 
 const PostgresSessionStore = connectPg(session);
@@ -33,14 +33,14 @@ export interface IStorage {
   markNotificationAsRead(id: number): Promise<boolean>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private tasks: Map<number, Task>;
   private notifications: Map<number, Notification>;
-  sessionStore: session.SessionStore;
+  sessionStore: any;
   currentUserId: number;
   currentTaskId: number;
   currentNotificationId: number;
@@ -212,4 +212,138 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  sessionStore: any;
+
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true
+    });
+  }
+
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async getTask(id: number): Promise<Task | undefined> {
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task;
+  }
+
+  async createTask(insertTask: InsertTask): Promise<Task> {
+    const [task] = await db.insert(tasks).values(insertTask).returning();
+    
+    // If the task is assigned to someone, create a notification
+    if (task.assignedToId && task.assignedToId !== task.createdById) {
+      const [creator] = await db.select().from(users).where(eq(users.id, task.createdById));
+      const creatorName = creator ? creator.name : "Someone";
+      
+      await this.createNotification({
+        userId: task.assignedToId,
+        message: `${creatorName} assigned you a new task: ${task.title}`,
+        taskId: task.id,
+        read: false
+      });
+    }
+    
+    return task;
+  }
+
+  async updateTask(id: number, updateData: Partial<InsertTask>): Promise<Task | undefined> {
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    if (!task) return undefined;
+    
+    const prevAssignedToId = task.assignedToId;
+    
+    const [updatedTask] = await db
+      .update(tasks)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(tasks.id, id))
+      .returning();
+    
+    // If the assigned user changed, create a notification
+    if (updateData.assignedToId && 
+        updateData.assignedToId !== prevAssignedToId && 
+        updateData.assignedToId !== task.createdById) {
+      const [creator] = await db.select().from(users).where(eq(users.id, task.createdById));
+      const creatorName = creator ? creator.name : "Someone";
+      
+      await this.createNotification({
+        userId: updateData.assignedToId,
+        message: `${creatorName} assigned you a task: ${task.title}`,
+        taskId: task.id,
+        read: false
+      });
+    }
+    
+    return updatedTask;
+  }
+
+  async deleteTask(id: number): Promise<boolean> {
+    const result = await db.delete(tasks).where(eq(tasks.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getTasksByAssignedTo(userId: number): Promise<Task[]> {
+    return await db.select().from(tasks).where(eq(tasks.assignedToId, userId));
+  }
+
+  async getTasksByCreatedBy(userId: number): Promise<Task[]> {
+    return await db.select().from(tasks).where(eq(tasks.createdById, userId));
+  }
+
+  async getOverdueTasks(userId: number): Promise<Task[]> {
+    const now = new Date();
+    return await db.select().from(tasks).where(
+      and(
+        lt(tasks.dueDate, now),
+        ne(tasks.status, "completed"),
+        or(
+          eq(tasks.assignedToId, userId),
+          eq(tasks.createdById, userId)
+        )
+      )
+    );
+  }
+  
+  async getAllTasks(): Promise<Task[]> {
+    return await db.select().from(tasks);
+  }
+
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const [notification] = await db.insert(notifications).values(insertNotification).returning();
+    return notification;
+  }
+
+  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+    return await db.select().from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(notifications.createdAt);
+  }
+
+  async markNotificationAsRead(id: number): Promise<boolean> {
+    const result = await db.update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+}
+
+// Switch to using the database storage
+export const storage = new DatabaseStorage();
