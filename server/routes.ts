@@ -125,10 +125,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not authorized to update this task" });
       }
       
-      const updatedTask = await storage.updateTask(taskId, req.body);
+      // Use the same schema for validation as we do for task creation
+      // but make a partial schema for updates
+      const taskUpdateSchema = z.object({
+        title: insertTaskSchema.shape.title.optional(),
+        description: insertTaskSchema.shape.description.optional(),
+        dueDate: insertTaskSchema.shape.dueDate.optional(),
+        priority: insertTaskSchema.shape.priority.optional(),
+        status: insertTaskSchema.shape.status.optional(),
+        estimatedHours: insertTaskSchema.shape.estimatedHours.optional(),
+        assignedToId: insertTaskSchema.shape.assignedToId.optional(),
+      });
+      
+      const validatedData = taskUpdateSchema.parse(req.body);
+      const updatedTask = await storage.updateTask(taskId, validatedData);
+      
       res.json(updatedTask);
     } catch (error) {
-      res.status(500).json({ message: "Failed to update task" });
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid task data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to update task" });
+      }
     }
   });
 

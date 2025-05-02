@@ -39,10 +39,19 @@ export const tasks = pgTable("tasks", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const insertTaskSchema = createInsertSchema(tasks).omit({
+// Create a base schema then customize it to handle string dates
+const baseInsertTaskSchema = createInsertSchema(tasks).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+// Customize the schema to handle string to date conversion
+export const insertTaskSchema = baseInsertTaskSchema.extend({
+  dueDate: z.union([
+    z.string().transform(val => val ? new Date(val) : null),
+    z.date().nullable()
+  ]).nullable().optional(),
 });
 
 export type InsertTask = z.infer<typeof insertTaskSchema>;
