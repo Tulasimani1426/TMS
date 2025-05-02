@@ -1,7 +1,11 @@
 import { users, tasks, notifications, type User, type InsertUser, type Task, type InsertTask, type Notification, type InsertNotification } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { db, pool } from "./db";
+import { eq, and, lt, ne } from "drizzle-orm";
+import connectPg from "connect-pg-simple";
 
+const PostgresSessionStore = connectPg(session);
 const MemoryStore = createMemoryStore(session);
 
 // modify the interface with any CRUD methods

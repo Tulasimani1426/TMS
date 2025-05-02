@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -64,3 +65,34 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
+
+// Define relations
+export const usersRelations = relations(users, ({ many }) => ({
+  createdTasks: many(tasks, { relationName: "creator" }),
+  assignedTasks: many(tasks, { relationName: "assignee" }),
+  notifications: many(notifications)
+}));
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  creator: one(users, {
+    fields: [tasks.createdById],
+    references: [users.id],
+    relationName: "creator"
+  }),
+  assignee: one(users, {
+    fields: [tasks.assignedToId],
+    references: [users.id],
+    relationName: "assignee"
+  })
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id]
+  }),
+  task: one(tasks, {
+    fields: [notifications.taskId],
+    references: [tasks.id]
+  })
+}));
