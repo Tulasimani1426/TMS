@@ -1,0 +1,35 @@
+/* You can place this inside a global styles file or component-specific CSS */
+.my-tasks-container {
+    padding: 20px;
+  }
+  
+  .tasks-list {
+    margin-top: 20px;
+  }
+  
+  .task-item {
+    background: #f9f9f9;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .task-title {
+    font-size: 1.2em;
+    font-weight: bold;
+  }
+  
+  .task-description {
+    color: #555;
+  }
+  
+  .task-status {
+    color: #436aa2;
+    font-weight: bold;
+  }
+  
+  .task-due-date {
+    color: #888;
+  }
+  

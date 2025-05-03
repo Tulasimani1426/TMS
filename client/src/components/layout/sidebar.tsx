@@ -20,12 +20,12 @@ export function Sidebar() {
       icon: <LayoutDashboard className="mr-3 h-6 w-6" />,
     },
     {
-      href: "/tasks",
+      href: "/my-tasks",
       label: "My Tasks",
       icon: <CheckSquare className="mr-3 h-6 w-6" />,
     },
     {
-      href: "/team",
+      href: "/team-page",
       label: "Team",
       icon: <Users className="mr-3 h-6 w-6" />,
     },

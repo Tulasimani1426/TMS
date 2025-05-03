@@ -16,6 +16,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     res.status(401).json({ message: "Unauthorized" });
   };
+// Fetch tasks assigned to the logged-in user
+app.get("/api/tasks/assigned", isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const tasks = await storage.getTasksByAssignedTo(userId); // Fetch tasks assigned to user
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch assigned tasks" });
+  }
+});
 
   // Get all users (for task assignment)
   app.get("/api/users", isAuthenticated, async (req, res) => {
